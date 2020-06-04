@@ -1,7 +1,8 @@
 """
-@file spam.py
-@author
+@file botmain.py
+@author qu-gg
 
+Script that holds the bot code for the simple Pokedex bot
 """
 import discord
 from discord.ext import commands
@@ -39,15 +40,36 @@ def format_embed(pokemon):
                  "**Speed:** {} \n".format(pokemon['hp'], pokemon['attack'], pokemon['defense'], pokemon['sp_attack'],
                                            pokemon['sp_defense'], pokemon['speed'])
 
-    string2 = "\n" \
+    # Abilities
+    abilities = ""
+    for ability in pokemon['abilities'].strip('[]').replace('\'', '').replace(' ', '').split(','):
+        abilities += "{} \n".format(ability)
+
+    # Misc info
+    percentage_str = "None" if pokemon["percentage_male"] is None \
+        else "{:2.1f}% Male | {:2.1f}% Female".format(pokemon["percentage_male"], 100 - pokemon["percentage_male"])
+
+    misc    = "\n" \
               "\n" \
               "**Height**: {}m \n" \
-              "**Weight**: {}kg \n".format(pokemon['height_m'], pokemon['weight_kg'])
+              "**Weight**: {}kg \n" \
+              "**Gender:** {}\n" \
+              "\n" \
+              "**Generation:** {} \n" \
+              "**Classification:** {} \n" \
+              "\n" \
+              "**Base Egg Steps:** {} \n" \
+              "**Capture Rate:** {} \n" \
+              "**Base Happiness**: {}".format(pokemon['height_m'], pokemon['weight_kg'], percentage_str,
+                                          pokemon["generation"], pokemon['classfication'],
+                                          pokemon['base_egg_steps'], pokemon['capture_rate'], pokemon['base_happiness'])
 
     embed = discord.Embed(title="**#{} - {}**".format(pokemon['pokedex_number'], pokemon['name']))
-    embed.add_field(name="Type", value=type_str, inline=True)
-    embed.add_field(name="Base Stats", value=base_stats, inline=False)
-    embed.add_field(name=":pika:", value=string2, inline=True)
+    embed.set_image(url="https://github.com/qu-gg/pokedex-bot/raw/master/images/{:03}.png".format(pokemon["pokedex_number"]))
+    embed.add_field(name="Type", value=type_str)
+    embed.add_field(name="Base Stats", value=base_stats)
+    embed.add_field(name="Abilities", value=abilities)
+    embed.add_field(name="Misc", value=misc)
     return embed
 
 
@@ -87,8 +109,7 @@ async def dex(ctx):
 
         if 1 <= id <= len(pokedex):
             pokemon = pokedex[id]
-            await ctx.channel.send(embed=format_embed(pokemon),
-                                   file=discord.File("images/{:03}.png".format(pokemon['pokedex_number'])))
+            await ctx.channel.send(embed=format_embed(pokemon))
             print(pokemon)
         else:
             await ctx.channel.send("ID out of bounds! IDs are between 1 and {}.".format(len(pokedex)))
@@ -97,11 +118,11 @@ async def dex(ctx):
     except ValueError:
         try:
             pokemon = get_pokemon(inp)
-            await ctx.channel.send(embed=format_embed(pokemon),
-                                   file=discord.File("images/{:03}.png".format(pokemon['pokedex_number'])))
+            await ctx.channel.send(embed=format_embed(pokemon))
         except NotImplementedError:
             await ctx.channel.send("Pokemon not found! Try again.")
-        print(get_pokemon(inp))
+
+    print("Pokemon: {}".format(inp))
 
 
 client.run(config.BOT_TOKEN)
